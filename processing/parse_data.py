@@ -3,7 +3,6 @@ import geopandas as gpd
 import numpy as np
 from tqdm import tqdm
 from scipy.stats import pearsonr
-import itertools
 
 
 def load_insar_data(filepaths, bbox):
@@ -68,10 +67,12 @@ def align_time_series(dfs_list):
 
 
 def resample_and_interpolate(row):
-    row.index = pd.to_datetime(row.index)
-    row_resampled = row.resample('6D').asfreq()
-    raw_interpolated = row_resampled.interpolate(method='linear', limit_area='inside')
-    return raw_interpolated
+    ts = pd.Series(row.values, index=pd.to_datetime(row.index))
+    ts_valid = ts.dropna()
+    ts_resampled = ts_valid.resample('6D').asfreq()
+    ts_interpolated = ts_resampled.interpolate(method='linear', limit_area='inside')
+
+    return ts_interpolated
 
 
 def load_insar_time_series(filepaths, bbox):
@@ -215,3 +216,4 @@ def align_ts_by_pid(df, combine=False, pearson_threshold=50):
     df_result = pd.DataFrame(results).reset_index()
     df_result.rename(columns={'index': 'pid'}, inplace=True)
     return df_result
+
